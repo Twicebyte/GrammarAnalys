@@ -4,7 +4,8 @@
 using namespace std;
 
 #pragma region Symbols determination
-class Symbol {};
+class Symbol { };
+Symbol U = Symbol(); //Universal
 class Terminal :Symbol
 {
 public:
@@ -50,7 +51,7 @@ public:
 	}
 	Symbol* operator[](int a)
 	{
-		if ((a > Count) | (a<1)) return;
+		if ((a > Count) | (a<1)) return &U;
 		SymbolTypeListItem* current = first;
 		while (a > 1) { current = (*current).next; a--; }
 		return (*current).S;
@@ -78,6 +79,7 @@ class Grammar
 	Alphabet Symbols;
 };
 #pragma endregion
+
 
 int main()
 {
