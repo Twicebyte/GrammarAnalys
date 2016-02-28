@@ -1,42 +1,58 @@
 #include <cstdlib>
 #include <fstream>
+#include <string>
 
 using namespace std;
 
 #pragma region Symbols determination
-class Symbol { };
-Symbol U = Symbol(); //Universal
+class Symbol
+{
+public:
+	Symbol() {}
+};
 class Terminal :Symbol
 {
 public:
 	char value;
 };
-class Nonterminal :Symbol {}; // "BARs" - Brackets, Alternatives, Replicators 
-class Alternative : Nonterminal {};
-class Bracket : Nonterminal {};
-class Replicator : Nonterminal {};
+class Nonterminal :Symbol {public:	Nonterminal() :Symbol() {}}; // "BARs" - Brackets, Alternatives, Replicators 
+class Alternative :Nonterminal 
+{public:	Alternative() :Nonterminal() {}
+};
+class Bracket : Nonterminal 
+{public:	Bracket() :Nonterminal() {}
+};
+class Replicator : Nonterminal 
+{public:	Replicator() :Nonterminal() {}
+};
 #pragma endregion
 
 #pragma region List determination
-class SymbolTypeListItem
+template <class T>
+class ListItem
 {
 public:
-	SymbolTypeListItem* next;
-	SymbolTypeListItem* prev;
-	Symbol* S;
-	SymbolTypeListItem(Symbol* Sym) { S = Sym; }
+	ListItem* next;
+	ListItem* prev;
+	T* S;
+	SymbolTypeListItem(T* Sym) { S = Sym; }
 };
-class SymbolTypeList
+template <class T>
+class List
 {
 private:
-	SymbolTypeListItem* first;
-	SymbolTypeListItem* last;
+	ListItem* first;
+	ListItem* last;
 public:
 	int Count = 0;
-	void add(Symbol* S)
+	List()
 	{
-		SymbolTypeListItem* I;
-		I = new SymbolTypeListItem(S);
+		Count = 0;
+	}
+	void add(T* S)
+	{
+		ListItem* I;
+		I = new ListItem(S);
 		if (Count > 0)
 		{
 			(*I).prev = last;
@@ -52,7 +68,7 @@ public:
 	Symbol* operator[](int a)
 	{
 		if ((a > Count) | (a<1)) return &U;
-		SymbolTypeListItem* current = first;
+		ListItem* current = first;
 		while (a > 1) { current = (*current).next; a--; }
 		return (*current).S;
 	}
@@ -62,21 +78,68 @@ public:
 #pragma region General classes
 class Alphabet
 {
-	SymbolTypeList T; //Terminals
-	SymbolTypeList B; //Brackets
-	SymbolTypeList A; //Alternatives
-	SymbolTypeList R; //Replicators
+private:
+	List <Symbol> T; //Terminals
+	List <Symbol> B; //Brackets
+	List <Symbol> A; //Alternatives
+	List <Symbol> R; //Replicators
+public:
+	Alphabet()
+	{
+		T = List <Symbol>();
+		B = List <Symbol>();
+		A = List <Symbol>();
+		R = List <Symbol>();
+	}
+	void reset()
+	{
+		T = List <Symbol>();
+		B = List <Symbol>();
+		A = List <Symbol>();
+		R = List <Symbol>();
+	}
 };
 class GrammarRule
 {
-	Nonterminal Seed;
+private:
+	Nonterminal* Seed;
 	Symbol* Value;
+public:
+	GrammarRule(Nonterminal* S)
+	{
+		Seed = S;
+	}
+};
+class GrammarBook
+{
+private:
+	List <GrammarRule> Rules; //Terminals
+public:
+	GrammarBook()
+	{
+		Rules = List <GrammarRule>();
+	}
+	GrammarRule* reset(Nonterminal* G)
+	{
+		Rules = List <GrammarRule>();
+		GrammarRule* A = new GrammarRule(G);
+	}
 };
 class Grammar
 {
 	Nonterminal GeneralSeed;
-	GrammarRule* Rules;
+	GrammarBook Rules;
 	Alphabet Symbols;
+	Grammar()
+	{
+		GeneralSeed = Nonterminal();
+	}
+	void resetGrammar(string prop)
+	{
+		Symbols.reset();
+		GrammarRule* Current = Rules.reset(&GeneralSeed);
+		//The place to parse the proposition
+	}
 };
 #pragma endregion
 
