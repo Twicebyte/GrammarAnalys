@@ -171,7 +171,7 @@ class Terminal : Symbol
 {
 public:
 	Terminal() : Symbol() {};
-	char Value;
+	char Value = 0;
 };
 
 class Plural
@@ -228,9 +228,9 @@ public:
 	{
 		Next = link;
 	}
-	bool exist(Symbol* link, int k)
+	bool exist(Terminal* link, int k)
 	{
-		if (Value == link) return true;
+		if ((*((Terminal*)(Value))).Value == (*link).Value) return true;
 		else
 			if (k = 0) return false; else return (*Next).exist(link, k - 1);
 	}
@@ -241,14 +241,14 @@ class Alphabet
 private:
 	Litera* First;
 	Litera* Last;
-	bool exist(Symbol* link)
+	bool exist(Terminal* link)
 	{
 		return (*First).exist(link,Count-1);
 	}
 public:
 	Alphabet() {};
 	int Count = 0;
-	bool add(Symbol* link)
+	bool add(Terminal* link)
 	{
 		if (exist(link))
 			return false;
@@ -257,7 +257,7 @@ public:
 			if (Count > 0)
 			{
 				Litera* p = new Litera();
-				(*p).setValue(link);
+				(*p).setValue(((Symbol*)link));
 				(*Last).setNext(p);
 				Last = p;
 				Count++;
@@ -265,12 +265,30 @@ public:
 			else
 			{
 				Litera* p = new Litera();
-				(*p).setValue(link);
+				(*p).setValue(((Symbol*)link));
 				Last = p; First = p;
 				Count++;
 			}
 			return true;
 		}
+	}
+	bool add(Nonterminal* link)
+	{
+		if (Count > 0)
+			{
+				Litera* p = new Litera();
+				(*p).setValue(((Symbol*)link));
+				(*Last).setNext(p);
+				Last = p;
+				Count++;
+			}
+			else
+			{
+				Litera* p = new Litera();
+				(*p).setValue(((Symbol*)link));
+				Last = p; First = p;
+				Count++;
+			}
 	}
 	Symbol* operator[](int a)
 	{
@@ -311,7 +329,7 @@ public:
 	}
 	bool exist(Rule* link, int k)
 	{
-		if (Value == link) return true; //REPAIR!!!
+		if (Value == link) return true; //REPAIR!!! Make adequate equality check.
 		else
 			if (k = 0) return false; else return (*Next).exist(link, k - 1);
 	}
