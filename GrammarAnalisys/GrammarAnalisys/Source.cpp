@@ -4,7 +4,7 @@
 
 using namespace std;
 
-/*
+/* Previous code
 #pragma region Symbols determination
 class Symbol
 {
@@ -174,6 +174,45 @@ public:
 	char Value = 0;
 };
 
+class Litera
+{
+private:
+	Symbol* Value;
+	Litera* Next;
+public:
+	Litera() {};
+	Symbol* operator[](int a)
+	{
+		if (a == 0) return Value;
+		else
+			return (*Next)[a - 1];
+	}
+	void setValue(Symbol* link)
+	{
+		Value = link;
+	}
+	void setNext(Litera* link)
+	{
+		Next = link;
+	}
+	bool exist(Terminal* link, int k)
+	{
+		if ((*((Terminal*)(Value))).Value == (*link).Value) return true;
+		else
+			if (k = 0) return false; else return (*Next).exist(link, k - 1);
+	}
+	bool compare(Litera p, int k)
+	{
+		if (k == 0) return p.Value == Value;
+		else
+			return (p.Value == Value) & (*Next).compare(*(p.Next), k - 1);
+	}
+	bool operator== (Litera p)
+	{
+		return p.Value == Value;
+	}
+};
+
 class Plural
 {
 private:
@@ -205,34 +244,16 @@ public:
 		if ((a<Count)&(a>-1))
 			return (*First)[a];
 	}
-};
-
-class Litera
-{
-private:
-	Symbol* Value;
-	Litera* Next;
-public:
-	Litera() {};
-	Symbol* operator[](int a)
+	bool operator== (Plural p)
 	{
-		if (a == 0) return Value;
+		bool b = true;
+		if (Count != p.Count) b = false;
 		else
-			return (*Next)[a - 1];
-	}
-	void setValue(Symbol* link)
-	{
-		Value = link;
-	}
-	void setNext(Litera* link)
-	{
-		Next = link;
-	}
-	bool exist(Terminal* link, int k)
-	{
-		if ((*((Terminal*)(Value))).Value == (*link).Value) return true;
-		else
-			if (k = 0) return false; else return (*Next).exist(link, k - 1);
+		{
+			b = (*First).compare(*(p.First), Count-1);
+		}
+		return b;
+		
 	}
 };
 
@@ -299,11 +320,11 @@ public:
 
 class Rule
 {
-private:
-	Nonterminal From;
-	Plural To;
 public:
 	Rule() {};
+	Nonterminal* From;
+	Plural To;
+
 };
 
 class RuleNode
@@ -329,7 +350,7 @@ public:
 	}
 	bool exist(Rule* link, int k)
 	{
-		if (Value == link) return true; //REPAIR!!! Make adequate equality check.
+		if (((*Value).From == (*link).From)&((*Value).To == (*link).To)) return true; //REPAIR!!! Make adequate equality check.
 		else
 			if (k = 0) return false; else return (*Next).exist(link, k - 1);
 	}
@@ -386,10 +407,48 @@ private:
 	Codex Rules;
 public:
 	Grammar() {};
-	bool CheckLine(string s)
+	Grammar(string s) //Combine grammar
+	{
+/*
+init: Create B0
+0 Create A1
+1 B0 -> A1
+2 Ai -> Reading
+2.1 If Brackets open then
+	2.1.1 Create B last_b
+	2.1.2 Ai -> ...B last_b
+	2.1.3 Create A last_a
+	2.1.4 B last_b -> A last_a
+	2.1.5 Go to 2 (last_a)
+2.2 If Alternative then
+	2.2.1 Create A last_a
+	2.2.1 ParentBrackets(Ai) -> A last_a
+	2.2.2 Go to 2 (last_a)
+2.3 If Brackets close (EOL) then
+	2.3.1 Drop back to ParentBrackets
+	2.3.2 Drop back to ParentAlternative (Finish process of reading!)
+	2.3.3 Go to 2 (ParentAlternative(ParentBrackets(Ai)))
+2.4 If Link then
+	2.4.1 Ai -> ...B link
+	2.4.2 Go to 2 (i)
+2.5 If Replicator then
+	2.5.1 Create R last_r 
+	2.5.2 Ai -> ...R last_r
+	2.5.3 R last_r -> prev_Symbol
+	2.5.4 R last_r -> ...R last_r
+	2.5.5 Go to 2 (i)
+2.6 Else
+	2.6.1 Create (if not exists) Terminal T last_t (Tk)
+	2.6.2 Ai -> ...T last_t (Ai -> ...Tk)
+	2.6.3 Go to 2 (i)
+3 Create S
+4 S -> B0
+*/
+	};
+	bool CheckLine(string s) //Proceed algorithm
 	{
 
-	}
+	};
 };
 
 
