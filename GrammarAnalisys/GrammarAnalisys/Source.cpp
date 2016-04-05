@@ -5,179 +5,17 @@
 
 using namespace std;
 
-/* Previous code
-#pragma region Symbols determination
-class Symbol
-{
-public:
-	Symbol() {}
-};
-class Terminal :Symbol
-{
-public:
-	char value;
-};
-class Nonterminal :Symbol 
-{
-public:
-	Nonterminal() :Symbol() {}
-}; // "BARs" - Brackets, Alternatives, Replicators 
-class Alternative :Nonterminal 
-{
-public:
-	Alternative() :Nonterminal() {}
-};
-class Bracket : Nonterminal 
-{
-public:
-	Bracket() :Nonterminal() {}
-};
-class Replicator : Nonterminal 
-{
-public:
-	Replicator() :Nonterminal() {}
-};
-#pragma endregion
-
-#pragma region List determination
-template <class T>
-class ListItem
-{
-public:
-	ListItem* next;
-	ListItem* prev;
-	T* S;
-	SymbolTypeListItem(T* Sym) { S = Sym; }
-};
-template <class T>
-class List
-{
-private:
-	ListItem* first;
-	ListItem* last;
-public:
-	int Count = 0;
-	List()
-	{
-		Count = 0;
-	}
-	void add(T* S)
-	{
-		ListItem* I;
-		I = new ListItem(S);
-		if (Count > 0)
-		{
-			(*I).prev = last;
-			(*last).next = I;
-			last = I;
-		}
-		else
-		{
-			first = I;
-			last = I;
-		}
-	}
-	Symbol* operator[](int a)
-	{
-		if ((a > Count) | (a<1)) return &U;
-		ListItem* current = first;
-		while (a > 1) { current = (*current).next; a--; }
-		return (*current).S;
-	}
-};
-#pragma endregion
-
-#pragma region General classes
-class Alphabet
-{
-private:
-	List <Symbol> T; //Terminals
-	List <Symbol> B; //Brackets
-	List <Symbol> A; //Alternatives
-	List <Symbol> R; //Replicators
-public:
-	Alphabet()
-	{
-		T = List <Symbol>();
-		B = List <Symbol>();
-		A = List <Symbol>();
-		R = List <Symbol>();
-	}
-	void reset()
-	{
-		T = List <Symbol>();
-		B = List <Symbol>();
-		A = List <Symbol>();
-		R = List <Symbol>();
-	}
-};
-class GrammarRule
-{
-private:
-	Nonterminal* Seed;
-	Symbol* Value;
-public:
-	GrammarRule(Nonterminal* S)
-	{
-		Seed = S;
-	}
-};
-class GrammarBook
-{
-private:
-	List <GrammarRule> Rules; //Terminals
-public:
-	GrammarBook()
-	{
-		Rules = List <GrammarRule>();
-	}
-	GrammarRule* reset(Nonterminal* G)
-	{
-		Rules = List <GrammarRule>();
-		GrammarRule* A = new GrammarRule(G);
-	}
-};
-class Grammar
-{
-	Nonterminal GeneralSeed;
-	GrammarBook Rules;
-	Alphabet Symbols;
-	Grammar()
-	{
-		GeneralSeed = Nonterminal();
-	}
-	void resetGrammar(string prop)
-	{
-		Symbols.reset();
-		GrammarRule* Current = Rules.reset(&GeneralSeed);
-		//The place to parse the proposition
-	}
-};
-#pragma endregion
-*/
-
+#pragma region Grammar Classes
 class Symbol
 {
 public:
 	Symbol() {};
 	Symbol(string V) { Value = V; };
 	string Value = "";
-};
-
-class Nonterminal : Symbol
-{
-public:
-	Nonterminal(): Symbol() {};
-	Nonterminal(string V) : Symbol() { Value = V; };
-	string Value = "";
-};
-
-class Terminal : Symbol
-{
-public:
-	Terminal() : Symbol() {};
-	Terminal(string V) : Symbol() { Value = V; };
-	string Value = "";
+	bool operator==(Symbol S)
+	{
+		return Value == S.Value;
+	}
 };
 
 class Litera
@@ -201,9 +39,9 @@ public:
 	{
 		Next = link;
 	}
-	Terminal* exist(Terminal* link, int k)
+	Symbol* exist(Symbol* link, int k)
 	{
-		if ((*((Terminal*)(Value))).Value == (*link).Value) return (Terminal*)Value;
+		if ((*((Value))).Value == (*link).Value) return Value;
 		else
 			if (k == 0) return link; else return (*Next).exist(link, k - 1);
 	}
@@ -219,8 +57,12 @@ public:
 	}
 	void Report(int k)
 	{
-		cout << (*Value).Value<<' ';
+		cout << (*Value).Value <<' ';
 		if (k > 0) (*Next).Report(k-1);
+	}
+	Litera* getNext()
+	{
+		return Next;
 	}
 };
 
@@ -232,6 +74,11 @@ private:
 public:
 	Plural() {};
 	int Count = 0;
+	void Skip()
+	{
+		First = (*First).getNext();
+		Count--;
+	}
 	void add(Symbol* link)
 	{
 		if (Count > 0)
@@ -250,6 +97,10 @@ public:
 			Count++;
 		}
 	}
+	void Switch(Symbol* link)
+	{
+		(*Last).setValue(link);
+	}
 	Symbol* operator[](int a)
 	{
 		if ((a<Count)&(a>-1))
@@ -263,6 +114,8 @@ public:
 		if (Count != p.Count) b = false;
 		else
 		{
+			if (Count == 0) return true;
+			else
 			b = (*First).compare(*(p.First), Count-1);
 		}
 		return b;
@@ -278,16 +131,16 @@ class Alphabet
 private:
 	Litera* First;
 	Litera* Last;
-	Terminal* exist(Terminal* link)
+	Symbol* exist(Symbol* link)
 	{
-		return (*First).exist(link,Count-1);
+		if (Count > 0) return (*First).exist(link, Count - 1); else return link;
 	}
 public:
 	Alphabet() {};
 	int Count = 0;
-	Terminal* add(Terminal* link)
+	Symbol* add(Symbol* link)
 	{
-		Terminal* r = exist(link);
+		Symbol* r = exist(link);
 		if (r!=link)
 			return r;
 		else
@@ -295,7 +148,7 @@ public:
 			if (Count > 0)
 			{
 				Litera* p = new Litera();
-				(*p).setValue(((Symbol*)link));
+				(*p).setValue((link));
 				(*Last).setNext(p);
 				Last = p;
 				Count++;
@@ -303,31 +156,12 @@ public:
 			else
 			{
 				Litera* p = new Litera();
-				(*p).setValue(((Symbol*)link));
+				(*p).setValue((link));
 				Last = p; First = p;
 				Count++;
 			}
 			return link;
 		}
-	}
-	Nonterminal* add(Nonterminal* link)
-	{
-		if (Count > 0)
-			{
-				Litera* p = new Litera();
-				(*p).setValue(((Symbol*)link));
-				(*Last).setNext(p);
-				Last = p;
-				Count++;
-			}
-			else
-			{
-				Litera* p = new Litera();
-				(*p).setValue(((Symbol*)link));
-				Last = p; First = p;
-				Count++;
-			}
-		return link;
 	}
 	Symbol* operator[](int a)
 	{
@@ -346,12 +180,13 @@ class Rule
 {
 public:
 	Rule() {};
-	Rule(Nonterminal* F) { From = F; };
-	Rule(Nonterminal* F, Symbol* T) { From = F; To.add(T); };
-	Rule(Nonterminal* F, Plural T) { From = F; To = T; };
-	Nonterminal* From;
+	Rule(Symbol* F) { From = F; };
+	Rule(Symbol* F, Symbol* T) { From = F; To.add(T); };
+	Rule(Symbol* F, Plural T) { From = F; To = T; };
+	Symbol* From;
 	Plural To;
 	void Add(Symbol* S) { To.add(S); }
+	void Switch(Symbol* S) { To.Switch(S); }
 	void Report()
 	{
 		cout << (*From).Value << " -> ";
@@ -401,7 +236,7 @@ private:
 	RuleNode* Last;
 	bool exist(Rule* link)
 	{
-		return (*First).exist(link, Count - 1);
+		if (Count > 0) return (*First).exist(link, Count - 1); else return false;
 	}
 public:
 	Codex() {};
@@ -440,6 +275,143 @@ public:
 		if (Count>0) (*First).Report(Count-1);
 	}
 };
+#pragma endregion
+
+#pragma region Partition Classes
+class Situation
+{
+public:
+	Situation() {};
+	Situation(Symbol* F, Plural TA, Plural TB, int P) { From = F; ToA = TA; ToB = TB; Position = P; };
+	Symbol* From;
+	Plural ToA;
+	Plural ToB;
+	int Position;
+	bool operator==(Situation S)
+	{
+		return((*From == *S.From)&(ToA == S.ToA)&(ToB == S.ToB)&(Position == S.Position));
+	}
+};
+
+class SituationNode
+{
+public:
+	SituationNode() {};
+	SituationNode(Situation* S) { Value = S; };
+	Situation* Value;
+	SituationNode* Next;
+	void setValue(Situation* link)
+	{
+		Value = link;
+	}
+	void setNext(SituationNode* link)
+	{
+		Next = link;
+	}
+	Situation* operator[](int a)
+	{
+		if (a == 0) return Value;
+		else
+			return (*Next)[a - 1];
+	}
+	bool Exists(Situation* link, int k)
+	{
+		if ((*Value) == (*link))
+			return true;
+		else
+			if (k == 0) return false;
+			else
+				return (*Next).Exists(link, k - 1);
+	}
+};
+
+
+class Partition
+{
+public:
+	Partition() {};
+	SituationNode* First;
+	SituationNode* Last;
+	int Count=0;
+	Partition* Next;
+	int add(Situation* link)
+	{
+		if (Count > 0)
+		{
+			if (!(*First).Exists(link, Count - 1))
+			{
+				SituationNode* p = new SituationNode();
+				(*p).setValue(link);
+				(*Last).setNext(p);
+				Last = p;
+				Count++;
+				return 1;
+			}
+			else
+				return 0;
+		}
+		else
+		{
+
+			SituationNode* p = new SituationNode();
+			(*p).setValue(link);
+			Last = p; First = p;
+			Count++;
+			return 1;
+
+		}
+	}
+	Situation* operator[](int a)
+	{
+		if ((a<Count)&(a>-1))
+			return (*First)[a];
+		else
+			return (*Last)[0];
+	}
+	Partition* Get(int a)
+	{
+		if (a == 0) return this;
+		else
+			return (*Next).Get(a - 1);
+	}
+	void setNext(Partition* link)
+	{
+		Next = link;
+	}
+};
+
+class Deconstruction
+{
+public:
+	Deconstruction() {};
+	Partition* First;
+	Partition* Last;
+	int Count=0;
+	void add()
+	{
+		if (Count > 0)
+		{
+			Partition* p = new Partition();
+			(*Last).setNext(p);
+			Last = p;
+			Count++;
+		}
+		else
+		{
+			Partition* p = new Partition();
+			Last = p; First = p;
+			Count++;
+		}
+	}
+	Partition* operator[](int a)
+	{
+		if ((a<Count)&(a>-1))
+			return (*First).Get(a);
+		else
+			return (*Last).Get(0);
+	}
+};
+#pragma endregion
 
 class Grammar
 {
@@ -452,12 +424,12 @@ private:
 public:
 	Grammar() {};
 
-	void AltReading(string s,unsigned int& k, Nonterminal* ParentBrackets)
+	void AltReading(string s,unsigned int& k, Symbol* ParentBrackets)
 	{		
 	//Create references
-		Nonterminal* A = new Nonterminal("A"+to_string(AAlphabet.Count));
+		Symbol* A = new Symbol("A"+to_string(AAlphabet.Count));
 		AAlphabet.add(A);
-		Rule* R0 = new Rule(ParentBrackets, (Symbol*)A);
+		Rule* R0 = new Rule(ParentBrackets, A);
 		Rules.add(R0);
 		Rule* R = new Rule(A);
 	//Start reading
@@ -466,18 +438,18 @@ public:
 		{
 			if (s[k] != '\\')
 			{
-				Terminal* T = new Terminal(to_string(s[k]));
+				Symbol* T = new Symbol(s.substr(k,1));
 				T = TAlphabet.add(T);
-				(*R).Add((Symbol*)T);
+				(*R).Add(T);
 				k++;
 			}
 			else
 			{
 				if (s[k+1] == '\\')
 				{
-					Terminal* T = new Terminal(to_string(s[k+1]));
+					Symbol* T = new Symbol(s.substr(k+1, 1));
 					T = TAlphabet.add(T);
-					(*R).Add((Symbol*)T);
+					(*R).Add(T);
 					k++; k++;
 				}
 				else if (s[k + 1] == ')')
@@ -488,20 +460,20 @@ public:
 				else if (s[k + 1] == '(')
 				{
 					k++; k++;
-					Nonterminal* B = new Nonterminal("B" + to_string(AAlphabet.Count));
+					Symbol* B = new Symbol("B" + to_string(BAlphabet.Count));
 					BAlphabet.add(B);
-					(*R).Add((Symbol*)B);
+					(*R).Add(B);
 					AltReading(s, k, B);
 				}
 				else if (s[k + 1] == '*')
 				{
 					k++; k++;
-					Nonterminal* Rep = new Nonterminal("R" + to_string(AAlphabet.Count));
+					Symbol* Rep = new Symbol("R" + to_string(RAlphabet.Count));
 					RAlphabet.add(Rep);
 					Rule* R1 = new Rule(Rep,(*R).To[(*R).To.Count-1]);
-					(*R1).Add((Symbol*)Rep);
+					(*R1).Add(Rep);
 					Rules.add(R1);
-					(*R).Add((Symbol*)Rep);
+					(*R).Switch(Rep);
 				}
 				else if (s[k + 1] == '|')
 				{
@@ -554,28 +526,27 @@ init: Create B0 +
 	2.5.4 R last_r -> ...R last_r +
 	2.5.5 Go to 2 (i) +
 2.6 Else +
-	2.6.1 Create (if not exists) Terminal T last_t (Tk) +
+	2.6.1 Create (if not exists) Symbol T last_t (Tk) +
 	2.6.2 Ai -> ...T last_t (Ai -> ...Tk) +
 	2.6.3 Go to 2 (i) +
 3 Create S +
 4 S -> B0 +
 */
 		unsigned int k = 0;
-		Nonterminal* S = new Nonterminal("S");
-		BAlphabet.add(S);
-		Nonterminal* B0 = new Nonterminal("B0");
+		Symbol* S = new Symbol("S");
+		AAlphabet.add(S);
+		Symbol* B0 = new Symbol("B0");
 		BAlphabet.add(B0);
-		Rule* R = new Rule(S, (Symbol*)B0);
+		Rule* R = new Rule(S, B0);
 		Rules.add(R);
 		AltReading(s, k, B0);
 	};
-
 	void Report()
 	{
-		cout << "Terminals Alphabet:" << endl;
+		cout << "Symbols Alphabet:" << endl;
 		TAlphabet.Report(); cout << endl;
 
-		cout << "Nonterminals Alphabet:" << endl;
+		cout << "Symbols Alphabet:" << endl;
 		AAlphabet.Report();
 		BAlphabet.Report();
 		RAlphabet.Report(); cout << endl;
@@ -584,16 +555,129 @@ init: Create B0 +
 		Rules.Report(); cout << endl;
 	};
 
+	void Scan(Deconstruction* D, int j, string s)
+	{
+		if (j == 0) return;
+		else
+		{
+			for (int i = 0; i < (*((*D)[j - 1])).Count; i++)
+			{
+				if (((*(*(*D)[j-1])[i]).ToB.Count)>0)
+				{
+					if ((*(*(*(*D)[j - 1])[i]).ToB[0]) == Symbol(s.substr(j - 1, 1)))
+					{
+
+						(*(*D)[j]).add((*(*D)[j - 1])[i]);
+					}
+				}
+			}
+		}
+	}
+
+	int Complete(Deconstruction* D, int j, string s)
+	{
+		int o = 0;
+		for (int i = 0; i < (*((*D)[j])).Count; i++)
+		{
+			if ((*(*(*D)[j])[i]).ToB.Count==0)
+			{
+				int k = (*(*(*D)[j])[i]).Position;
+				for (int r = 0; r < (*((*D)[k])).Count; r++)
+				{
+					if ((*(*(*D)[k])[r]).ToB.Count > 1)
+					{
+						if ((*(*(*(*D)[k])[r]).ToB[0]) == (*(*(*(*D)[j])[i]).From))
+						{
+							Situation T = *(*(*D)[k])[r];
+							T.ToA.add(T.ToB[0]);
+							T.ToB.Skip();
+							Situation* S = new Situation(T.From, T.ToA, T.ToB, T.Position);
+							o += (*(*D)[j]).add(S);
+
+						}
+					}
+				}
+			}
+		}
+		return o;
+	}
+
+	int Predict(Deconstruction* D, int j, string s)
+	{
+		int o = 0;
+		for (int i = 0; i < (*((*D)[j])).Count; i++)
+		{
+			if (((*(*(*D)[j])[i]).ToB.Count)>0)
+			{
+				if ((*(*(*(*D)[j])[i]).ToB[0]).Value.length() > 1)
+				{
+					for (int r = 0; r < Rules.Count; r++)
+					{
+						if ((*((*Rules[r]).From)) == ((*(*(*(*D)[j])[i]).ToB[0])))
+						{
+							Plural* P = new Plural();
+							Situation* S = new Situation((*Rules[r]).From, *P, (*Rules[r]).To, j);
+							o += (*(*D)[j]).add(S);
+
+						}
+					}
+				}
+			}
+		}
+		return o;
+	}
+
 	bool CheckLine(string s) //Proceed algorithm
 	{
+		//Initialization
+		Deconstruction D = Deconstruction();
+		D.add();
+		Plural* P = new Plural;
+		Situation* S = new Situation((*Rules[0]).From, *P, (*Rules[0]).To, 0);
+		(*D[0]).add(S);
+		for (int i = 1; i < s.length(); i++)
+		{
+			D.add();
+		}
 
+		//Calculating
+		for (int i = 0; i < s.length(); i++)
+		{
+			Scan(&D, i, s);
+			int y = 1;
+			while (y != 0)
+			{
+				y = Complete(&D, i, s) + Predict(&D, i, s);
+			}
+		}
+
+		//Resulting
+		bool b = false;
+		for (int i = 0; i < (*(D[s.length() - 1])).Count; i++)
+		{
+			if ((*((*(*(D[s.length() - 1]))[i]).From) == *((*Rules[0]).From))&
+				(((*(*(D[s.length() - 1]))[i]).ToA) == ((*Rules[0]).To))&
+				(((*(*(D[s.length() - 1]))[i]).ToB.Count) == 0))
+				return true;
+			else
+				return false;
+		}
 	};
 };
-
 
 int main()
 {
 	Grammar G = Grammar("\\(\\|(\\1)\\1\\)");
 	G.Report();
+
+	cout << "(()()))" << endl;
+	if (G.CheckLine("(()()))"))
+	{
+		cout << "Success" << endl;
+	}
+	else
+	{
+		cout << "Fail" << endl;
+	}
 	cout << endl;
 }
