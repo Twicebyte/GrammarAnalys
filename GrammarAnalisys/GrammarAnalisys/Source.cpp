@@ -114,6 +114,8 @@ public:
 		if (Count != p.Count) b = false;
 		else
 		{
+			if (Count == 0) return true;
+			else
 			b = (*First).compare(*(p.First), Count-1);
 		}
 		return b;
@@ -285,6 +287,10 @@ public:
 	Plural ToA;
 	Plural ToB;
 	int Position;
+	bool operator==(Situation S)
+	{
+		return((*From == *S.From)&(ToA == S.ToA)&(ToB == S.ToB)&(Position == S.Position));
+	}
 };
 
 class SituationNode
@@ -308,6 +314,15 @@ public:
 		else
 			return (*Next)[a - 1];
 	}
+	bool Exists(Situation* link, int k)
+	{
+		if ((*Value) == (*link))
+			return true;
+		else
+			if (k == 0) return false;
+			else
+				return (*Next).Exists(link, k - 1);
+	}
 };
 
 
@@ -319,22 +334,31 @@ public:
 	SituationNode* Last;
 	int Count=0;
 	Partition* Next;
-	void add(Situation* link)
+	int add(Situation* link)
 	{
 		if (Count > 0)
 		{
-			SituationNode* p = new SituationNode();
-			(*p).setValue(link);
-			(*Last).setNext(p);
-			Last = p;
-			Count++;
+			if (!(*First).Exists(link, Count - 1))
+			{
+				SituationNode* p = new SituationNode();
+				(*p).setValue(link);
+				(*Last).setNext(p);
+				Last = p;
+				Count++;
+				return 1;
+			}
+			else
+				return 0;
 		}
 		else
 		{
+
 			SituationNode* p = new SituationNode();
 			(*p).setValue(link);
 			Last = p; First = p;
 			Count++;
+			return 1;
+
 		}
 	}
 	Situation* operator[](int a)
@@ -538,17 +562,21 @@ init: Create B0 +
 		{
 			for (int i = 0; i < (*((*D)[j - 1])).Count; i++)
 			{
-				if ((*(*(*(*D)[j - 1])[i]).ToB[0]) == Symbol(s.substr(j - 1, 1)))
+				if (((*(*(*D)[j-1])[i]).ToB.Count)>0)
 				{
-					
-					(*(*D)[j]).add((*(*D)[j - 1])[i]);
+					if ((*(*(*(*D)[j - 1])[i]).ToB[0]) == Symbol(s.substr(j - 1, 1)))
+					{
+
+						(*(*D)[j]).add((*(*D)[j - 1])[i]);
+					}
 				}
 			}
 		}
 	}
 
-	void Complete(Deconstruction* D, int j, string s)
+	int Complete(Deconstruction* D, int j, string s)
 	{
+		int o = 0;
 		for (int i = 0; i < (*((*D)[j])).Count; i++)
 		{
 			if ((*(*(*D)[j])[i]).ToB.Count==0)
@@ -556,41 +584,84 @@ init: Create B0 +
 				int k = (*(*(*D)[j])[i]).Position;
 				for (int r = 0; r < (*((*D)[k])).Count; r++)
 				{
-					if ((*(*(*(*D)[k])[r]).ToB[0]) == (*(*(*(*D)[j])[i]).From))
+					if ((*(*(*D)[k])[r]).ToB.Count > 1)
 					{
-						Situation T = *(*(*D)[k])[r];
-						T.ToA.add(T.ToB[0]);
-						T.ToB.Skip();
-						Situation* S = new Situation(T.From,T.ToA,T.ToB,T.Position);
-						(*(*D)[j]).add(S);
+						if ((*(*(*(*D)[k])[r]).ToB[0]) == (*(*(*(*D)[j])[i]).From))
+						{
+							Situation T = *(*(*D)[k])[r];
+							T.ToA.add(T.ToB[0]);
+							T.ToB.Skip();
+							Situation* S = new Situation(T.From, T.ToA, T.ToB, T.Position);
+							o += (*(*D)[j]).add(S);
+
+						}
 					}
 				}
 			}
 		}
+		return o;
 	}
 
-	void Predict(Deconstruction* D, int j, string s)
+	int Predict(Deconstruction* D, int j, string s)
 	{
+		int o = 0;
 		for (int i = 0; i < (*((*D)[j])).Count; i++)
 		{
-			if ((*(*(*(*D)[j])[i]).ToB[0]).Value.length()>1)
+			if (((*(*(*D)[j])[i]).ToB.Count)>0)
 			{
-				for (int r = 0; r < Rules.Count; r++)
+				if ((*(*(*(*D)[j])[i]).ToB[0]).Value.length() > 1)
 				{
-					if ((*((*Rules[r]).From)) == ((*(*(*(*D)[j])[i]).ToB[0])))
+					for (int r = 0; r < Rules.Count; r++)
 					{
-						Plural* P = new Plural();
-						Situation* S = new Situation((*Rules[r]).From, *P, (*Rules[r]).To, j);
-						(*(*D)[j]).add(S);
+						if ((*((*Rules[r]).From)) == ((*(*(*(*D)[j])[i]).ToB[0])))
+						{
+							Plural* P = new Plural();
+							Situation* S = new Situation((*Rules[r]).From, *P, (*Rules[r]).To, j);
+							o += (*(*D)[j]).add(S);
+
+						}
 					}
 				}
 			}
 		}
+		return o;
 	}
 
 	bool CheckLine(string s) //Proceed algorithm
 	{
+		//Initialization
+		Deconstruction D = Deconstruction();
+		D.add();
+		Plural* P = new Plural;
+		Situation* S = new Situation((*Rules[0]).From, *P, (*Rules[0]).To, 0);
+		(*D[0]).add(S);
+		for (int i = 1; i < s.length(); i++)
+		{
+			D.add();
+		}
 
+		//Calculating
+		for (int i = 0; i < s.length(); i++)
+		{
+			Scan(&D, i, s);
+			int y = 1;
+			while (y != 0)
+			{
+				y = Complete(&D, i, s) + Predict(&D, i, s);
+			}
+		}
+
+		//Resulting
+		bool b = false;
+		for (int i = 0; i < (*(D[s.length() - 1])).Count; i++)
+		{
+			if ((*((*(*(D[s.length() - 1]))[i]).From) == *((*Rules[0]).From))&
+				(((*(*(D[s.length() - 1]))[i]).ToA) == ((*Rules[0]).To))&
+				(((*(*(D[s.length() - 1]))[i]).ToB.Count) == 0))
+				return true;
+			else
+				return false;
+		}
 	};
 };
 
@@ -599,5 +670,14 @@ int main()
 	Grammar G = Grammar("\\(\\|(\\1)\\1\\)");
 	G.Report();
 
+	cout << "(()()))" << endl;
+	if (G.CheckLine("(()()))"))
+	{
+		cout << "Success" << endl;
+	}
+	else
+	{
+		cout << "Fail" << endl;
+	}
 	cout << endl;
 }
