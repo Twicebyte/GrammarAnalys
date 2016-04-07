@@ -5,6 +5,7 @@
 
 using namespace std;
 
+ofstream ofs("OUTPUT.txt");
 #pragma region Grammar Classes
 class Symbol
 {
@@ -35,6 +36,10 @@ public:
 	{
 		Value = link;
 	}
+	void setValue(Symbol* link,int k)
+	{
+		if (k > 0) (*Next).setValue(link, k - 1); else Value = link;
+	}
 	void setNext(Litera* link)
 	{
 		Next = link;
@@ -57,12 +62,18 @@ public:
 	}
 	void Report(int k)
 	{
-		cout << (*Value).Value <<' ';
+		ofs << (*Value).Value <<' ';
 		if (k > 0) (*Next).Report(k-1);
 	}
 	Litera* getNext()
 	{
 		return Next;
+	}
+	void add(Litera* p, int k)
+	{
+		if (k > 0) (*Next).add(p, k - 1);
+		else
+		Next = p;
 	}
 };
 
@@ -70,7 +81,6 @@ class Plural
 {
 private:
 	Litera* First;
-	Litera* Last;
 public:
 	Plural() {};
 	int Count = 0;
@@ -85,28 +95,27 @@ public:
 		{
 			Litera* p = new Litera();
 			(*p).setValue(link);
-			(*Last).setNext(p);
-			Last = p;
+			(*First).add(p,Count-1);
 			Count++;
 		}
 		else
 		{
 			Litera* p = new Litera();
 			(*p).setValue(link);
-			Last = p; First = p;
+			First = p;
 			Count++;
 		}
 	}
 	void Switch(Symbol* link)
 	{
-		(*Last).setValue(link);
+		(*First).setValue(link,Count-1);
 	}
 	Symbol* operator[](int a)
 	{
 		if ((a<Count)&(a>-1))
 			return (*First)[a];
 		else
-			return (*Last)[0];
+			return (*First)[0];
 	}
 	bool operator== (Plural p)
 	{
@@ -189,9 +198,9 @@ public:
 	void Switch(Symbol* S) { To.Switch(S); }
 	void Report()
 	{
-		cout << (*From).Value << " -> ";
+		ofs << (*From).Value << " -> ";
 		To.Report();
-		cout << endl;
+		ofs << endl;
 	}
 };
 
@@ -325,7 +334,6 @@ public:
 	}
 };
 
-
 class Partition
 {
 public:
@@ -345,6 +353,11 @@ public:
 				(*Last).setNext(p);
 				Last = p;
 				Count++;
+				ofs << Count << ". " << (*(*link).From).Value << " -> "; 
+				(*link).ToA.Report(); 
+				ofs << "|| "; 
+				(*link).ToB.Report(); 
+				ofs << " , " << (*link).Position << endl;
 				return 1;
 			}
 			else
@@ -357,6 +370,11 @@ public:
 			(*p).setValue(link);
 			Last = p; First = p;
 			Count++;
+			ofs << Count << ". " << (*(*link).From).Value << " -> ";
+			(*link).ToA.Report(); 
+			ofs << "|| "; 
+			(*link).ToB.Report(); 
+			ofs << " , " << (*link).Position << endl;
 			return 1;
 
 		}
@@ -495,6 +513,7 @@ public:
 		}
 		Rules.add(R);
 	}
+
 	Grammar(string s) //Combine grammar
 	{
 		/*
@@ -541,18 +560,19 @@ init: Create B0 +
 		Rules.add(R);
 		AltReading(s, k, B0);
 	};
+
 	void Report()
 	{
-		cout << "Symbols Alphabet:" << endl;
-		TAlphabet.Report(); cout << endl;
+		ofs << "Symbols Alphabet:" << endl;
+		TAlphabet.Report(); ofs << endl;
 
-		cout << "Symbols Alphabet:" << endl;
+		ofs << "Symbols Alphabet:" << endl;
 		AAlphabet.Report();
 		BAlphabet.Report();
-		RAlphabet.Report(); cout << endl;
+		RAlphabet.Report(); ofs << endl;
 
-		cout << "Rules list:" << endl;
-		Rules.Report(); cout << endl;
+		ofs << "Rules list:" << endl;
+		Rules.Report(); ofs << endl;
 	};
 
 	void Scan(Deconstruction* D, int j, string s)
@@ -566,8 +586,11 @@ init: Create B0 +
 				{
 					if ((*(*(*(*D)[j - 1])[i]).ToB[0]) == Symbol(s.substr(j - 1, 1)))
 					{
-
-						(*(*D)[j]).add((*(*D)[j - 1])[i]);
+						Situation T = *(*(*D)[j-1])[i];
+						T.ToA.add(T.ToB[0]);
+						T.ToB.Skip();
+						Situation* S = new Situation(T.From, T.ToA, T.ToB, T.Position);
+						(*(*D)[j]).add(S);
 					}
 				}
 			}
@@ -584,7 +607,7 @@ init: Create B0 +
 				int k = (*(*(*D)[j])[i]).Position;
 				for (int r = 0; r < (*((*D)[k])).Count; r++)
 				{
-					if ((*(*(*D)[k])[r]).ToB.Count > 1)
+					if ((*(*(*D)[k])[r]).ToB.Count > 0)
 					{
 						if ((*(*(*(*D)[k])[r]).ToB[0]) == (*(*(*(*D)[j])[i]).From))
 						{
@@ -634,50 +657,95 @@ init: Create B0 +
 		D.add();
 		Plural* P = new Plural;
 		Situation* S = new Situation((*Rules[0]).From, *P, (*Rules[0]).To, 0);
+		ofs << endl<< "Partition 0" << endl;
 		(*D[0]).add(S);
-		for (int i = 1; i < s.length(); i++)
+		int y = 1;
+		while (y != 0)
+		{
+			y = Complete(&D, 0, s) + Predict(&D, 0, s);
+		}
+		ofs << endl;
+
+		for (int i = 1; i <= s.length(); i++)
 		{
 			D.add();
 		}
 
 		//Calculating
-		for (int i = 0; i < s.length(); i++)
+		for (int i = 1; i <= s.length(); i++)
 		{
+			ofs << "Partition " << i << endl;
 			Scan(&D, i, s);
 			int y = 1;
 			while (y != 0)
 			{
 				y = Complete(&D, i, s) + Predict(&D, i, s);
 			}
+			ofs << endl;
 		}
 
 		//Resulting
 		bool b = false;
-		for (int i = 0; i < (*(D[s.length() - 1])).Count; i++)
+		for (int i = 0; i < (*(D[s.length()])).Count; i++)
 		{
-			if ((*((*(*(D[s.length() - 1]))[i]).From) == *((*Rules[0]).From))&
-				(((*(*(D[s.length() - 1]))[i]).ToA) == ((*Rules[0]).To))&
-				(((*(*(D[s.length() - 1]))[i]).ToB.Count) == 0))
-				return true;
-			else
-				return false;
+			if (*((*(*(D[s.length()]))[i]).From) == *((*Rules[0]).From))
+			{
+				if (((*(*(D[s.length()]))[i]).ToA) == ((*Rules[0]).To))
+				{
+					if (((*(*(D[s.length()]))[i]).ToB.Count) == 0)
+					{
+						b = true;
+					}
+				}
+			}
 		}
+		return b;
 	};
 };
 
+
 int main()
 {
+
+	ifstream ifs("INPUT.txt");
+	string s;
+
+	getline(ifs, s);
+	ofs << s << endl;
+	Grammar G = Grammar(s);
+	G.Report();
+	ofs << endl;
+
+	while (!ifs.eof())
+	{
+		getline(ifs, s);
+		ofs <<"Control line:"<<endl<< s << endl;
+		if (G.CheckLine(s))
+		{
+			ofs <<"Result:"<<endl<< "Success" << endl; // SOME KIND OF FUUUUUUCK!!!
+		}
+		else
+		{
+			ofs << "Result:" << endl << "Fail" << endl;
+		}
+		ofs << endl;
+	};
+
+	ifs.close();	
+	ofs.close();
+	/*
 	Grammar G = Grammar("\\(\\|(\\1)\\1\\)");
 	G.Report();
-
-	cout << "(()()))" << endl;
-	if (G.CheckLine("(()()))"))
-	{
-		cout << "Success" << endl;
-	}
-	else
-	{
-		cout << "Fail" << endl;
-	}
 	cout << endl;
+
+		cout << "(()())" << endl;
+		if (G.CheckLine("(()())"))
+		{
+			cout << "Success" << endl; // SOME KIND OF FUUUUUUCK!!!
+		}
+		else
+		{
+			cout << "Fail" << endl;
+		}
+		*/
 }
