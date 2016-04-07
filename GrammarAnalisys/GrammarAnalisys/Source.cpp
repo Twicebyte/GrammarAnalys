@@ -450,9 +450,12 @@ public:
 					k++; k++;
 					Symbol* Rep = new Symbol("R" + to_string(RAlphabet.Count));
 					RAlphabet.add(Rep);
-					Rule* R1 = new Rule(Rep,(*R).To[(*R).To.Count-1]);
+					Rule* R1 = new Rule(Rep, (*R).To[(*R).To.Count - 1]);
 					(*R1).Add(Rep);
 					Rules.add(R1);
+					Symbol P();
+					Rule* R2 = new Rule(Rep);
+					Rules.add(R2);
 					(*R).Switch(Rep);
 				}
 				else if (s[k + 1] == '|')
