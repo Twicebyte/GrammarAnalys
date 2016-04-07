@@ -633,7 +633,7 @@ int main()
 		ofs <<"Control line:"<<endl<< s << endl;
 		if (G.CheckLine(s))
 		{
-			ofs <<"Result:"<<endl<< "Success" << endl; // SOME KIND OF FUUUUUUCK!!!
+			ofs <<"Result:"<<endl<< "Success" << endl;
 		}
 		else
 		{
