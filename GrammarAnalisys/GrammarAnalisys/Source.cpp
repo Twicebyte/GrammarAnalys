@@ -60,11 +60,6 @@ public:
 	{
 		return p.Value == Value;
 	}
-	void Report(int k)
-	{
-		ofs << (*Value).Value <<' ';
-		if (k > 0) (*Next).Report(k-1);
-	}
 	Litera* getNext()
 	{
 		return Next;
@@ -129,10 +124,6 @@ public:
 		}
 		return b;
 	}
-	void Report()
-	{
-		if (Count>0) (*First).Report(Count - 1);
-	}
 };
 
 class Alphabet
@@ -179,10 +170,6 @@ public:
 		else
 			return (*Last)[0];
 	}
-	void Report()
-	{
-		if (Count>0) (*First).Report(Count-1);
-	}
 };
 
 class Rule
@@ -196,12 +183,6 @@ public:
 	Plural To;
 	void Add(Symbol* S) { To.add(S); }
 	void Switch(Symbol* S) { To.Switch(S); }
-	void Report()
-	{
-		ofs << (*From).Value << " -> ";
-		To.Report();
-		ofs << endl;
-	}
 };
 
 class RuleNode
@@ -230,11 +211,6 @@ public:
 		if (((*Value).From == (*link).From)&((*Value).To == (*link).To)) return true;
 		else
 			if (k == 0) return false; else return (*Next).exist(link, k - 1);
-	}
-	void Report(int k)
-	{
-		(*Value).Report();
-		if (k > 0) (*Next).Report(k-1);
 	}
 };
 
@@ -278,10 +254,6 @@ public:
 	{
 		if ((a<Count)&(a>-1))
 			return (*First)[a];
-	}
-	void Report()
-	{
-		if (Count>0) (*First).Report(Count-1);
 	}
 };
 #pragma endregion
@@ -353,11 +325,6 @@ public:
 				(*Last).setNext(p);
 				Last = p;
 				Count++;
-				ofs << Count << ". " << (*(*link).From).Value << " -> "; 
-				(*link).ToA.Report(); 
-				ofs << "|| "; 
-				(*link).ToB.Report(); 
-				ofs << " , " << (*link).Position << endl;
 				return 1;
 			}
 			else
@@ -370,11 +337,6 @@ public:
 			(*p).setValue(link);
 			Last = p; First = p;
 			Count++;
-			ofs << Count << ". " << (*(*link).From).Value << " -> ";
-			(*link).ToA.Report(); 
-			ofs << "|| "; 
-			(*link).ToB.Report(); 
-			ofs << " , " << (*link).Position << endl;
 			return 1;
 
 		}
@@ -516,41 +478,6 @@ public:
 
 	Grammar(string s) //Combine grammar
 	{
-		/*
-init: Create B0 +
-0 Create A1 +
-1 B0 -> A1 +
-2 Ai -> Reading +
-2.1 If Brackets open then +
-	2.1.1 Create B last_b +
-	2.1.2 Ai -> ...B last_b +
-	2.1.3 Create A last_a +
-	2.1.4 B last_b -> A last_a +
-	2.1.5 Go to 2 (last_a) +
-2.2 If Alternative then +
-	2.2.1 Create A last_a +
-	2.2.1 ParentBrackets(Ai) -> A last_a +
-	2.2.2 Go to 2 (last_a) +
-2.3 If Brackets close (EOL) then +
-	2.3.1 Drop back to ParentBrackets +
-	2.3.2 Drop back to ParentAlternative (Finish process of reading!) +
-	2.3.3 Go to 2 (ParentAlternative(ParentBrackets(Ai))) +
-2.4 If Link then +
-	2.4.1 Ai -> ...B link +
-	2.4.2 Go to 2 (i) +
-2.5 If Replicator then +
-	2.5.1 Create R last_r +
-	2.5.2 Ai -> ...R last_r +
-	2.5.3 R last_r -> prev_Symbol +
-	2.5.4 R last_r -> ...R last_r +
-	2.5.5 Go to 2 (i) +
-2.6 Else +
-	2.6.1 Create (if not exists) Symbol T last_t (Tk) +
-	2.6.2 Ai -> ...T last_t (Ai -> ...Tk) +
-	2.6.3 Go to 2 (i) +
-3 Create S +
-4 S -> B0 +
-*/
 		unsigned int k = 0;
 		Symbol* S = new Symbol("S");
 		AAlphabet.add(S);
@@ -559,20 +486,6 @@ init: Create B0 +
 		Rule* R = new Rule(S, B0);
 		Rules.add(R);
 		AltReading(s, k, B0);
-	};
-
-	void Report()
-	{
-		ofs << "Symbols Alphabet:" << endl;
-		TAlphabet.Report(); ofs << endl;
-
-		ofs << "Symbols Alphabet:" << endl;
-		AAlphabet.Report();
-		BAlphabet.Report();
-		RAlphabet.Report(); ofs << endl;
-
-		ofs << "Rules list:" << endl;
-		Rules.Report(); ofs << endl;
 	};
 
 	void Scan(Deconstruction* D, int j, string s)
@@ -657,14 +570,12 @@ init: Create B0 +
 		D.add();
 		Plural* P = new Plural;
 		Situation* S = new Situation((*Rules[0]).From, *P, (*Rules[0]).To, 0);
-		ofs << endl<< "Partition 0" << endl;
 		(*D[0]).add(S);
 		int y = 1;
 		while (y != 0)
 		{
 			y = Complete(&D, 0, s) + Predict(&D, 0, s);
 		}
-		ofs << endl;
 
 		for (int i = 1; i <= s.length(); i++)
 		{
@@ -674,14 +585,12 @@ init: Create B0 +
 		//Calculating
 		for (int i = 1; i <= s.length(); i++)
 		{
-			ofs << "Partition " << i << endl;
 			Scan(&D, i, s);
 			int y = 1;
 			while (y != 0)
 			{
 				y = Complete(&D, i, s) + Predict(&D, i, s);
 			}
-			ofs << endl;
 		}
 
 		//Resulting
@@ -713,7 +622,6 @@ int main()
 	getline(ifs, s);
 	ofs << s << endl;
 	Grammar G = Grammar(s);
-	G.Report();
 	ofs << endl;
 
 	while (!ifs.eof())
@@ -733,19 +641,4 @@ int main()
 
 	ifs.close();	
 	ofs.close();
-	/*
-	Grammar G = Grammar("\\(\\|(\\1)\\1\\)");
-	G.Report();
-	cout << endl;
-
-		cout << "(()())" << endl;
-		if (G.CheckLine("(()())"))
-		{
-			cout << "Success" << endl; // SOME KIND OF FUUUUUUCK!!!
-		}
-		else
-		{
-			cout << "Fail" << endl;
-		}
-		*/
 }
